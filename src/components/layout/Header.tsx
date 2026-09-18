@@ -16,6 +16,7 @@ const navLinks = [
   { href: '/menu', label: 'Menu' },
   { href: '/admin', label: 'Dashboard' },
   { href: '/kitchen', label: 'Kitchen' },
+  { href: '/schema', label: 'Schema' },
 ];
 
 export default function Header() {

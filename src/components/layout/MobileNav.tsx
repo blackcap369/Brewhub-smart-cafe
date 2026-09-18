@@ -9,6 +9,7 @@ import {
   X,
   Home,
   ChefHat,
+  Database,
 } from 'lucide-react';
 import { useAppStore } from '../../stores';
 
@@ -20,6 +21,7 @@ const mobileLinks = [
   { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
   { href: '/admin/menu', label: 'Menu Items', icon: UtensilsCrossed },
   { href: '/kitchen', label: 'Kitchen Display', icon: Package },
+  { href: '/schema', label: 'DB Schema', icon: Database },
 ];
 
 export default function MobileNav() {

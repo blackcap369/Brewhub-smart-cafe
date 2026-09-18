@@ -10,6 +10,7 @@ import Menu from './pages/Menu';
 import Kitchen from './pages/Kitchen';
 import Admin from './pages/Admin';
 import OrderTracking from './pages/OrderTracking';
+import SchemaDocs from './pages/SchemaDocs';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,6 +55,7 @@ function AppRoutes() {
         <Route path="/kitchen" element={<Kitchen />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/order/:id" element={<OrderTracking />} />
+        <Route path="/schema" element={<SchemaDocs />} />
         <Route
           path="*"
           element={

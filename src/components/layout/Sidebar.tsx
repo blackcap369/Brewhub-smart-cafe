@@ -10,6 +10,7 @@ import {
   Coffee,
   Package,
   CreditCard,
+  Database,
 } from 'lucide-react';
 import { useAppStore } from '../../stores';
 
@@ -36,6 +37,12 @@ const sidebarLinks = [
       { href: '/admin/reports', label: 'Reports', icon: BarChart3 },
       { href: '/admin/staff', label: 'Staff', icon: Users },
       { href: '/admin/settings', label: 'Settings', icon: Settings },
+    ],
+  },
+  {
+    group: 'Developer',
+    items: [
+      { href: '/schema', label: 'DB Schema', icon: Database },
     ],
   },
 ];
