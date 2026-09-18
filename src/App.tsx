@@ -16,6 +16,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Overview from './components/admin/Overview';
 import FloorMap from './components/admin/FloorMap';
 import MenuManagement from './components/admin/MenuManagement';
+import Analytics from './components/admin/Analytics';
 import OrderTracking from './pages/OrderTracking';
 import SchemaDocs from './pages/SchemaDocs';
 import LoginPage from './pages/LoginPage';
@@ -73,6 +74,7 @@ function AppRoutes() {
           <Route index element={<Overview />} />
           <Route path="floor-map" element={<FloorMap />} />
           <Route path="menu" element={<MenuManagement />} />
+          <Route path="analytics" element={<Analytics cafeId="demo-cafe-id" />} />
         </Route>
         <Route path="/order/:orderId" element={<OrderTracking />} />
         <Route path="/schema" element={<SchemaDocs />} />
