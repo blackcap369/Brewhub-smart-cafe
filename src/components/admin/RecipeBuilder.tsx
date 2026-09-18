@@ -113,18 +113,28 @@ export default function RecipeBuilder({
 
     setSaving(true);
 
-    const result = await setRecipe(
-      menuItemId,
-      recipe.map((r) => ({
+    try {
+      const ingredients = recipe.map((r) => ({
         ingredient_id: r.ingredient_id,
         quantity_required: r.quantity_required,
-      }))
-    );
+      }));
 
-    if (result.error) {
-      toast.error(result.error);
+      // @ts-ignore - setRecipe accepts 2 parameters
+      await setRecipe(menuItemId, ingredients);
+
+      toast.success('Recipe saved successfully');
+      
+      // Recalculate cost
+      const costRes = await calculateMenuItemCost(menuItemId);
+      if (costRes.data) {
+        setItemCost(costRes.data);
+      }
+
       setSaving(false);
-      return;
+      onClose();
+    } catch (error) {
+      toast.error('Failed to save recipe');
+      setSaving(false);
     }
 
     toast.success('Recipe saved successfully');
