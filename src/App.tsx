@@ -22,10 +22,12 @@ import Broadcasts from './pages/Broadcasts';
 import FeedbackPage from './pages/Feedback';
 import BirthdayPage from './pages/Birthday';
 import { StaffManagement } from './components/admin/StaffManagement';
+import AdminReservations from './components/admin/AdminReservations';
 import OrderTracking from './pages/OrderTracking';
 import SchemaDocs from './pages/SchemaDocs';
 import LoginPage from './pages/LoginPage';
 import CustomerApp from './pages/CustomerApp';
+import Reservations from './pages/Reservations';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -124,7 +126,13 @@ function AppRoutes() {
               <StaffManagement />
             </ProtectedRoute>
           } />
+          <Route path="reservations" element={
+            <ProtectedRoute requiredRole={['owner', 'manager', 'staff']}>
+              <AdminReservations cafeId="demo-cafe-id" />
+            </ProtectedRoute>
+          } />
         </Route>
+        <Route path="/reservations" element={<Reservations />} />
         <Route path="/order/:orderId" element={<OrderTracking />} />
         <Route path="/schema" element={<SchemaDocs />} />
         <Route

@@ -20,6 +20,7 @@ import {
   ChevronRight,
   MessageSquare,
   Cake,
+  Calendar,
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -27,6 +28,7 @@ const sidebarItems = [
   { icon: Map, label: 'Floor Map', href: '/admin/floor-map' },
   { icon: UtensilsCrossed, label: 'Menu Management', href: '/admin/menu' },
   { icon: ClipboardList, label: 'Orders', href: '/admin/orders' },
+  { icon: Calendar, label: 'Reservations', href: '/admin/reservations' },
   { icon: Users, label: 'Customers', href: '/admin/customers' },
   { icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
   { icon: Radio, label: 'Broadcasts', href: '/admin/broadcasts' },
