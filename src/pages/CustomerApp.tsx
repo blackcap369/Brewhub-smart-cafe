@@ -1,31 +1,41 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, ShoppingCart, X, Leaf, AlertCircle } from 'lucide-react';
 import { supabase } from '../services/supabase';
-import { parseQRCode, getQRDataFromLocation } from '../utils/qrParser';
+import { getQRDataFromLocation } from '../utils/qrParser';
+import { createOrder } from '../services/orderService';
+import { useCartStore } from '../stores/cartStore';
+import { useToast } from '../contexts/ToastContext';
 import type { DatabaseMenuItem, QRError } from '../types';
 import MenuItemCard from '../components/MenuItemCard';
 import CategoryTabs from '../components/CategoryTabs';
-
-interface CartItem {
-  item: DatabaseMenuItem;
-  quantity: number;
-}
+import CartDrawer from '../components/CartDrawer';
+import OrderConfirmation from '../components/OrderConfirmation';
 
 type SortOption = 'default' | 'price-low' | 'price-high' | 'popular';
 type VegFilter = 'all' | 'veg' | 'non-veg';
 
 export default function CustomerApp() {
   const [searchParams] = useSearchParams();
-  const [cart, setCart] = useState<Map<string, CartItem>>(new Map());
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [vegFilter, setVegFilter] = useState<VegFilter>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [qrError, setQrError] = useState<QRError | null>(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [orderConfirmation, setOrderConfirmation] = useState<{
+    orderId: string;
+    orderNumber: string;
+    estimatedTime: number;
+    tableNo: number;
+  } | null>(null);
+
+  const cart = useCartStore();
+  const toast = useToast();
 
   // Parse QR code data from URL
   const qrData = useMemo(() => {
@@ -66,7 +76,7 @@ export default function CustomerApp() {
 
   // Extract unique categories
   const categories = useMemo(() => {
-    const cats = new Set(menuItems.map((item) => item.category));
+    const cats = new Set(menuItems.map((item: DatabaseMenuItem) => item.category));
     return ['All', ...Array.from(cats).sort()];
   }, [menuItems]);
 
@@ -121,51 +131,71 @@ export default function CustomerApp() {
 
   // Cart functions
   const addToCart = (item: DatabaseMenuItem) => {
-    setCart((prev) => {
-      const newCart = new Map(prev);
-      const existing = newCart.get(item.id);
+    cart.addItem({
+      menuItemId: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.image_url || undefined,
+      isVeg: item.is_veg,
+      isSpicy: item.is_spicy,
+    });
+    toast.success(`${item.name} added to cart`);
+  };
 
-      if (existing) {
-        newCart.set(item.id, { ...existing, quantity: existing.quantity + 1 });
+  const removeFromCart = (menuItemId: string) => {
+    const item = cart.items.find((i) => i.menuItemId === menuItemId);
+    if (item) {
+      cart.removeItem(item.id);
+    }
+  };
+
+  const getItemQuantity = (menuItemId: string) => {
+    const item = cart.items.find((i) => i.menuItemId === menuItemId);
+    return item?.quantity || 0;
+  };
+
+  const handleCheckout = async () => {
+    if (!qrData || cart.items.length === 0) return;
+
+    setIsPlacingOrder(true);
+
+    try {
+      const result = await createOrder({
+        cafeId: qrData.cafeId,
+        tableNo: qrData.tableNo,
+        items: cart.items,
+        subtotal: cart.getSubtotal(),
+        tax: cart.getTax(),
+        total: cart.getTotal(),
+        orderType: 'dine_in',
+      });
+
+      if (result.success && result.orderId) {
+        // Generate order number (in real app, this comes from backend)
+        const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
+        
+        setOrderConfirmation({
+          orderId: result.orderId,
+          orderNumber,
+          estimatedTime: 15, // Default estimate
+          tableNo: qrData.tableNo,
+        });
+
+        // Clear cart
+        cart.clearCart();
+        setIsCartOpen(false);
+
+        toast.success('Order placed successfully!');
       } else {
-        newCart.set(item.id, { item, quantity: 1 });
+        toast.error(result.error || 'Failed to place order');
       }
-
-      return newCart;
-    });
+    } catch (error: any) {
+      console.error('Error placing order:', error);
+      toast.error('Failed to place order. Please try again.');
+    } finally {
+      setIsPlacingOrder(false);
+    }
   };
-
-  const removeFromCart = (itemId: string) => {
-    setCart((prev) => {
-      const newCart = new Map(prev);
-      const existing = newCart.get(itemId);
-
-      if (existing) {
-        if (existing.quantity > 1) {
-          newCart.set(itemId, { ...existing, quantity: existing.quantity - 1 });
-        } else {
-          newCart.delete(itemId);
-        }
-      }
-
-      return newCart;
-    });
-  };
-
-  const getItemQuantity = (itemId: string) => {
-    return cart.get(itemId)?.quantity || 0;
-  };
-
-  const cartTotal = useMemo(() => {
-    return Array.from(cart.values()).reduce(
-      (sum, { item, quantity }) => sum + item.price * quantity,
-      0
-    );
-  }, [cart]);
-
-  const cartItemCount = useMemo(() => {
-    return Array.from(cart.values()).reduce((sum, { quantity }) => sum + quantity, 0);
-  }, [cart]);
 
   // Show error state
   if (qrError) {
@@ -427,7 +457,7 @@ export default function CustomerApp() {
       </div>
 
       {/* Floating Cart Button */}
-      {cartItemCount > 0 && (
+      {cart.getItemCount() > 0 && (
         <motion.div
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -435,24 +465,39 @@ export default function CustomerApp() {
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50"
         >
           <button
-            onClick={() => {
-              // TODO: Navigate to cart/checkout page
-              console.log('Cart:', Array.from(cart.values()));
-            }}
+            onClick={() => setIsCartOpen(true)}
             className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-4 rounded-full shadow-2xl flex items-center gap-4 transition-colors"
           >
             <div className="relative">
               <ShoppingCart className="w-6 h-6" />
               <span className="absolute -top-2 -right-2 bg-white text-primary-600 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                {cartItemCount}
+                {cart.getItemCount()}
               </span>
             </div>
             <div className="text-left">
               <div className="text-sm font-medium opacity-90">View Cart</div>
-              <div className="text-lg font-bold">₹{cartTotal.toFixed(2)}</div>
+              <div className="text-lg font-bold">₹{cart.getTotal().toFixed(2)}</div>
             </div>
           </button>
         </motion.div>
+      )}
+
+      {/* Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        onCheckout={handleCheckout}
+      />
+
+      {/* Order Confirmation */}
+      {orderConfirmation && (
+        <OrderConfirmation
+          orderId={orderConfirmation.orderId}
+          orderNumber={orderConfirmation.orderNumber}
+          estimatedTime={orderConfirmation.estimatedTime}
+          tableNo={orderConfirmation.tableNo}
+          onClose={() => setOrderConfirmation(null)}
+        />
       )}
     </div>
   );
