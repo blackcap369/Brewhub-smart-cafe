@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import {
   Coffee,
   Menu,
@@ -12,14 +13,15 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../../stores';
 import { useAuth } from '../../hooks/useAuth';
+import LanguageSwitcher from '../LanguageSwitcher';
 
 const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/menu', label: 'Menu' },
-  { href: '/admin', label: 'Dashboard' },
-  { href: '/kitchen', label: 'Kitchen' },
-  { href: '/kitchen-dashboard', label: 'KDS' },
-  { href: '/schema', label: 'Schema' },
+  { href: '/', labelKey: 'common.welcome' },
+  { href: '/menu', labelKey: 'menu.title' },
+  { href: '/admin', labelKey: 'admin.dashboard' },
+  { href: '/kitchen', labelKey: 'kitchen.title' },
+  { href: '/kitchen-dashboard', labelKey: 'kitchen.title' },
+  { href: '/schema', labelKey: 'common.settings' },
 ];
 
 export default function Header() {
@@ -28,6 +30,7 @@ export default function Header() {
   const location = useLocation();
   const { toggleMobileMenu } = useAppStore();
   const { user, isAuthenticated, logout } = useAuth();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     await logout();
@@ -60,13 +63,15 @@ export default function Header() {
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                {link.label}
+                {t(link.labelKey)}
               </Link>
             ))}
           </nav>
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher />
+            
             <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <ShoppingCart className="w-5 h-5 text-gray-600" />
               <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -180,7 +185,7 @@ export default function Header() {
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  {link.label}
+                  {t(link.labelKey)}
                 </Link>
               ))}
               <hr className="my-2 border-gray-100" />
@@ -193,7 +198,7 @@ export default function Header() {
                   className="w-full flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all"
                 >
                   <LogOut className="w-4 h-4" />
-                  Logout
+                  {t('auth.logout')}
                 </button>
               ) : (
                 <Link
@@ -202,7 +207,7 @@ export default function Header() {
                   className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-primary-600 hover:bg-primary-50 transition-all"
                 >
                   <User className="w-4 h-4" />
-                  Login
+                  {t('auth.login')}
                 </Link>
               )}
             </nav>

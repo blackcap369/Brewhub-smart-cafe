@@ -76,6 +76,7 @@ export interface Database {
           calories: number | null
           allergens: string[]
           sort_order: number
+          translations: Json
           created_at: string
           updated_at: string
         }
@@ -95,6 +96,7 @@ export interface Database {
           calories?: number | null
           allergens?: string[]
           sort_order?: number
+          translations?: Json
           created_at?: string
           updated_at?: string
         }
@@ -114,6 +116,7 @@ export interface Database {
           calories?: number | null
           allergens?: string[]
           sort_order?: number
+          translations?: Json
           created_at?: string
           updated_at?: string
         }

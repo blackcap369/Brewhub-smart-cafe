@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { Plus, Minus, Star, Flame } from 'lucide-react';
 import type { DatabaseMenuItem } from '../types';
+import { getTranslatedName, getTranslatedDescription } from '../utils/translations';
 
 interface MenuItemCardProps {
   item: DatabaseMenuItem;
@@ -15,6 +17,12 @@ export default function MenuItemCard({
   onAdd,
   onRemove,
 }: MenuItemCardProps) {
+  const { t, i18n } = useTranslation();
+  
+  // Get translated content
+  const translatedName = getTranslatedName(item as any, i18n.language);
+  const translatedDescription = getTranslatedDescription(item as any, i18n.language);
+  
   return (
     <motion.div
       layout
@@ -75,7 +83,7 @@ export default function MenuItemCard({
         {item.is_popular && (
           <div className="absolute top-2 right-2 bg-gradient-to-r from-amber-400 to-amber-500 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center gap-1 shadow-md">
             <Star className="w-3 h-3 fill-white" />
-            Popular
+            {t('menu.popular')}
           </div>
         )}
 
@@ -90,12 +98,12 @@ export default function MenuItemCard({
       {/* Content Section */}
       <div className="p-4">
         <h3 className="font-semibold text-gray-900 text-lg mb-1 line-clamp-1">
-          {item.name}
+          {translatedName}
         </h3>
         
-        {item.description && (
+        {translatedDescription && (
           <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {item.description}
+            {translatedDescription}
           </p>
         )}
 
@@ -113,7 +121,7 @@ export default function MenuItemCard({
               className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition-colors shadow-sm"
             >
               <Plus className="w-4 h-4" />
-              ADD
+              {t('menu.addToCart')}
             </motion.button>
           ) : (
             <div className="flex items-center gap-2 bg-primary-50 border-2 border-primary-600 rounded-lg">
