@@ -1,12 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, ShoppingCart, X, Leaf, AlertCircle } from 'lucide-react';
+import { Search, Filter, ShoppingCart, X, Leaf, AlertCircle, Award, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../services/supabase';
 import { getQRDataFromLocation } from '../utils/qrParser';
 import { createOrder } from '../services/orderService';
 import { useCartStore } from '../stores/cartStore';
+import { useLoyaltyStore } from '../stores/loyaltyStore';
 import { useToast } from '../contexts/ToastContext';
 import type { DatabaseMenuItem, QRError } from '../types';
 import MenuItemCard from '../components/MenuItemCard';
@@ -14,6 +15,9 @@ import CategoryTabs from '../components/CategoryTabs';
 import CartDrawer from '../components/CartDrawer';
 import OrderConfirmation from '../components/OrderConfirmation';
 import PaymentModal from '../components/PaymentModal';
+import LoyaltyCard from '../components/LoyaltyCard';
+import LoyaltyBanner from '../components/LoyaltyBanner';
+import FreeItemSelector from '../components/FreeItemSelector';
 
 type SortOption = 'default' | 'price-low' | 'price-high' | 'popular';
 type VegFilter = 'all' | 'veg' | 'non-veg';
@@ -36,9 +40,13 @@ export default function CustomerApp() {
   } | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<any>(null);
+  const [showLoyaltyCard, setShowLoyaltyCard] = useState(false);
+  const [showFreeItemSelector, setShowFreeItemSelector] = useState(false);
+  const [showBanner, setShowBanner] = useState(true);
 
   const cart = useCartStore();
   const toast = useToast();
+  const { initializeCafe, incrementOrder, isEligibleForReward } = useLoyaltyStore();
 
   // Parse QR code data from URL
   const qrData = useMemo(() => {
@@ -49,6 +57,13 @@ export default function CustomerApp() {
     }
     return data;
   }, [searchParams]);
+
+  // Initialize loyalty for this cafe
+  useEffect(() => {
+    if (qrData?.cafeId) {
+      initializeCafe(qrData.cafeId);
+    }
+  }, [qrData?.cafeId, initializeCafe]);
 
   // Fetch menu items from Supabase
   const {
@@ -210,6 +225,9 @@ export default function CustomerApp() {
         tableNo: qrData.tableNo,
       });
 
+      // Increment loyalty counter
+      incrementOrder(qrData.cafeId);
+
       // Clear cart
       cart.clearCart();
       setShowPaymentModal(false);
@@ -336,9 +354,50 @@ export default function CustomerApp() {
                 {menuItems.length} items available
               </p>
             </div>
+            <button
+              onClick={() => setShowLoyaltyCard(!showLoyaltyCard)}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-lg hover:from-primary-600 hover:to-primary-700 transition-all shadow-md"
+            >
+              <Award className="w-5 h-5" />
+              <span className="font-medium">Rewards</span>
+              {showLoyaltyCard ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Loyalty Card Section */}
+      <AnimatePresence>
+        {showLoyaltyCard && qrData?.cafeId && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-gradient-to-br from-primary-50 to-amber-50 border-b border-primary-100"
+          >
+            <div className="max-w-7xl mx-auto px-4 py-6">
+              <LoyaltyCard
+                cafeId={qrData.cafeId}
+                onRedeem={() => setShowFreeItemSelector(true)}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Loyalty Banner */}
+      {qrData?.cafeId && showBanner && (
+        <div className="max-w-7xl mx-auto px-4 py-3">
+          <LoyaltyBanner
+            cafeId={qrData.cafeId}
+            onDismiss={() => setShowBanner(false)}
+          />
+        </div>
+      )}
 
       {/* Search and Filters */}
       <div className="bg-white border-b border-gray-200 sticky top-[73px] z-20">
@@ -533,6 +592,23 @@ export default function CustomerApp() {
           onSuccess={handlePaymentSuccess}
         />
       )}
+
+      {/* Free Item Selector */}
+      <FreeItemSelector
+        isOpen={showFreeItemSelector}
+        onClose={() => setShowFreeItemSelector(false)}
+        menuItems={menuItems}
+        maxItems={2}
+        onConfirm={(selectedItems) => {
+          // Handle free item selection
+          toast.success(`You selected ${selectedItems.length} free item(s)!`);
+          // In a real app, you would:
+          // 1. Add these items to the current order
+          // 2. Call redeemReward from loyaltyService
+          // 3. Update the order in the database
+          setShowFreeItemSelector(false);
+        }}
+      />
     </div>
   );
 }
