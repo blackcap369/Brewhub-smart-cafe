@@ -142,6 +142,8 @@ export interface Database {
           completed_at: string | null
           cancelled_at: string | null
           cancellation_reason: string | null
+          pre_order_status: 'scheduled' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'cancelled' | null
+          notification_sent: boolean
           created_at: string
           updated_at: string
         }
@@ -168,6 +170,8 @@ export interface Database {
           completed_at?: string | null
           cancelled_at?: string | null
           cancellation_reason?: string | null
+          pre_order_status?: 'scheduled' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'cancelled' | null
+          notification_sent?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -194,6 +198,8 @@ export interface Database {
           completed_at?: string | null
           cancelled_at?: string | null
           cancellation_reason?: string | null
+          pre_order_status?: 'scheduled' | 'confirmed' | 'preparing' | 'ready' | 'picked_up' | 'cancelled' | null
+          notification_sent?: boolean
           created_at?: string
           updated_at?: string
         }

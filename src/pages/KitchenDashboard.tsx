@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
 import { 
   ChefHat, 
   Volume2, 
@@ -8,11 +9,13 @@ import {
   Minimize2,
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Calendar
 } from 'lucide-react';
 import { KitchenOrderCard } from '../components/KitchenOrderCard';
 import { soundService } from '../utils/soundService';
 import { supabase } from '../services/supabase';
+import { getCountdown } from '../services/preOrderService';
 import type { Database } from '../types/database';
 
 type Order = Database['public']['Tables']['orders']['Row'];
@@ -21,6 +24,7 @@ type StatusFilter = 'all' | 'received' | 'preparing' | 'ready';
 
 export const KitchenDashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [preOrders, setPreOrders] = useState<Order[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -30,14 +34,28 @@ export const KitchenDashboard: React.FC = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch regular orders
+        const { data: regularOrders, error: regularError } = await supabase
           .from('orders')
           .select('*')
+          .eq('order_type', 'dine_in')
           .in('status', ['received', 'preparing', 'ready'])
           .order('created_at', { ascending: true });
 
-        if (error) throw error;
-        setOrders(data || []);
+        if (regularError) throw regularError;
+
+        // Fetch pre-orders
+        const { data: preOrderData, error: preOrderError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('order_type', 'pre_order')
+          .in('pre_order_status', ['scheduled', 'confirmed', 'preparing', 'ready'])
+          .order('scheduled_time', { ascending: true });
+
+        if (preOrderError) throw preOrderError;
+
+        setOrders(regularOrders || []);
+        setPreOrders(preOrderData || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
       } finally {
@@ -294,8 +312,125 @@ export const KitchenDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Orders Grid */}
+      {/* Pre-Orders Section */}
+      {preOrders.length > 0 && (
+        <div className="p-4 border-b border-gray-700">
+          <div className="flex items-center gap-2 mb-4">
+            <Calendar className="w-6 h-6 text-blue-400" />
+            <h2 className="text-xl font-bold">Upcoming Pre-Orders</h2>
+            <span className="bg-blue-600 text-white text-sm px-2 py-1 rounded-full">
+              {preOrders.length}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <AnimatePresence mode="popLayout">
+              {preOrders.map((order) => {
+                const countdown = getCountdown(order.scheduled_time || '');
+                const isUpcoming = countdown.totalMinutes > 0 && countdown.totalMinutes <= 30;
+                
+                return (
+                  <motion.div
+                    key={order.id}
+                    layout
+                    className={`relative border-2 rounded-lg p-4 shadow-lg ${
+                      isUpcoming
+                        ? 'border-blue-500 bg-blue-500/10'
+                        : 'border-gray-600 bg-gray-800'
+                    }`}
+                  >
+                    {/* Pre-order Badge */}
+                    <div className="absolute -top-2 -right-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded-full">
+                      PRE-ORDER
+                    </div>
+
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-2xl font-bold">#{order.order_number}</span>
+                          <span className={`px-2 py-1 rounded text-xs font-semibold uppercase ${
+                            order.pre_order_status === 'scheduled' ? 'bg-blue-500/20 text-blue-400' :
+                            order.pre_order_status === 'confirmed' ? 'bg-purple-500/20 text-purple-400' :
+                            order.pre_order_status === 'preparing' ? 'bg-amber-500/20 text-amber-400' :
+                            'bg-green-500/20 text-green-400'
+                          }`}>
+                            {order.pre_order_status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Scheduled Time */}
+                    <div className="mb-3 p-2 bg-gray-900/50 rounded">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4 text-blue-400" />
+                        <span className="text-gray-300">
+                          {order.scheduled_time && format(new Date(order.scheduled_time), 'MMM d, h:mm a')}
+                        </span>
+                      </div>
+                      {!countdown.isPast && (
+                        <div className="flex items-center gap-2 mt-1 text-sm">
+                          <Clock className="w-4 h-4 text-blue-400" />
+                          <span className={`font-mono ${isUpcoming ? 'text-blue-400 font-bold' : 'text-gray-400'}`}>
+                            {countdown.hours > 0 ? `${countdown.hours}h ` : ''}
+                            {countdown.minutes}m {countdown.seconds}s
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Items List */}
+                    <div className="space-y-2 mb-3">
+                      {(typeof order.items === 'string' ? JSON.parse(order.items) : order.items).map((item: any, index: number) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <span className="text-lg font-bold min-w-[2rem]">
+                            {item.quantity}x
+                          </span>
+                          <div className="flex-1">
+                            <div className="font-medium">{item.name}</div>
+                            {item.notes && (
+                              <div className="text-sm text-yellow-300 mt-1 italic">
+                                ⚠️ {item.notes}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      {order.pre_order_status === 'scheduled' && (
+                        <button
+                          onClick={() => handleStatusChange(order.id, 'preparing')}
+                          className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-semibold py-2 px-4 rounded transition-colors"
+                        >
+                          Start Preparing
+                        </button>
+                      )}
+                      {order.pre_order_status === 'preparing' && (
+                        <button
+                          onClick={() => handleStatusChange(order.id, 'ready')}
+                          className="flex-1 bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded transition-colors"
+                        >
+                          Mark Ready
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
+
+      {/* Regular Orders Grid */}
       <div className="p-4">
+        <div className="flex items-center gap-2 mb-4">
+          <ChefHat className="w-6 h-6 text-primary-500" />
+          <h2 className="text-xl font-bold">Current Orders</h2>
+        </div>
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="text-gray-400">Loading orders...</div>
