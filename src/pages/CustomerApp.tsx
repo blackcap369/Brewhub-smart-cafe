@@ -13,6 +13,7 @@ import MenuItemCard from '../components/MenuItemCard';
 import CategoryTabs from '../components/CategoryTabs';
 import CartDrawer from '../components/CartDrawer';
 import OrderConfirmation from '../components/OrderConfirmation';
+import PaymentModal from '../components/PaymentModal';
 
 type SortOption = 'default' | 'price-low' | 'price-high' | 'popular';
 type VegFilter = 'all' | 'veg' | 'non-veg';
@@ -33,6 +34,8 @@ export default function CustomerApp() {
     estimatedTime: number;
     tableNo: number;
   } | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState<any>(null);
 
   const cart = useCartStore();
   const toast = useToast();
@@ -171,21 +174,20 @@ export default function CustomerApp() {
       });
 
       if (result.success && result.orderId) {
-        // Generate order number (in real app, this comes from backend)
-        const orderNumber = `ORD-${Date.now().toString().slice(-6)}`;
-        
-        setOrderConfirmation({
-          orderId: result.orderId,
-          orderNumber,
-          estimatedTime: 15, // Default estimate
-          tableNo: qrData.tableNo,
-        });
+        // Fetch the created order
+        const { data: orderData } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', result.orderId)
+          .single();
 
-        // Clear cart
-        cart.clearCart();
-        setIsCartOpen(false);
+        if (orderData) {
+          setCreatedOrder(orderData);
+          setShowPaymentModal(true);
+          setIsCartOpen(false);
+        }
 
-        toast.success('Order placed successfully!');
+        toast.success('Order created! Please complete payment.');
       } else {
         toast.error(result.error || 'Failed to place order');
       }
@@ -194,6 +196,24 @@ export default function CustomerApp() {
       toast.error('Failed to place order. Please try again.');
     } finally {
       setIsPlacingOrder(false);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    if (createdOrder && qrData) {
+      const orderNumber = createdOrder.order_number || `ORD-${Date.now().toString().slice(-6)}`;
+      
+      setOrderConfirmation({
+        orderId: createdOrder.id,
+        orderNumber,
+        estimatedTime: 15,
+        tableNo: qrData.tableNo,
+      });
+
+      // Clear cart
+      cart.clearCart();
+      setShowPaymentModal(false);
+      setCreatedOrder(null);
     }
   };
 
@@ -497,6 +517,20 @@ export default function CustomerApp() {
           estimatedTime={orderConfirmation.estimatedTime}
           tableNo={orderConfirmation.tableNo}
           onClose={() => setOrderConfirmation(null)}
+        />
+      )}
+
+      {/* Payment Modal */}
+      {createdOrder && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setCreatedOrder(null);
+          }}
+          order={createdOrder}
+          cafeName="BrewHub Cafe"
+          onSuccess={handlePaymentSuccess}
         />
       )}
     </div>
