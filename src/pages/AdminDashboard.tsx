@@ -32,6 +32,7 @@ const sidebarItems = [
   { icon: Radio, label: 'Broadcasts', href: '/admin/broadcasts' },
   { icon: MessageSquare, label: 'Feedback', href: '/admin/feedback' },
   { icon: Cake, label: 'Birthday', href: '/admin/birthday' },
+  { icon: Users, label: 'Staff', href: '/admin/staff' },
   { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 

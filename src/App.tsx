@@ -7,6 +7,7 @@ import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import MobileNav from './components/layout/MobileNav';
 import ErrorBoundary from './components/ui/ErrorBoundary';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import Landing from './pages/Landing';
 import Menu from './pages/Menu';
 import Kitchen from './pages/Kitchen';
@@ -20,6 +21,7 @@ import Analytics from './components/admin/Analytics';
 import Broadcasts from './pages/Broadcasts';
 import FeedbackPage from './pages/Feedback';
 import BirthdayPage from './pages/Birthday';
+import { StaffManagement } from './components/admin/StaffManagement';
 import OrderTracking from './pages/OrderTracking';
 import SchemaDocs from './pages/SchemaDocs';
 import LoginPage from './pages/LoginPage';
@@ -70,17 +72,58 @@ function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/menu" element={<Menu />} />
         <Route path="/customer" element={<CustomerApp />} />
-        <Route path="/kitchen" element={<Kitchen />} />
-        <Route path="/kitchen-dashboard" element={<KitchenDashboard />} />
+        <Route path="/kitchen" element={
+          <ProtectedRoute requiredRole={['owner', 'manager', 'staff', 'kitchen']}>
+            <Kitchen />
+          </ProtectedRoute>
+        } />
+        <Route path="/kitchen-dashboard" element={
+          <ProtectedRoute requiredRole={['owner', 'manager', 'staff', 'kitchen']}>
+            <KitchenDashboard />
+          </ProtectedRoute>
+        } />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />}>
+        <Route path="/admin-dashboard" element={
+          <ProtectedRoute requiredRole={['owner', 'manager', 'staff']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }>
           <Route index element={<Overview />} />
-          <Route path="floor-map" element={<FloorMap />} />
-          <Route path="menu" element={<MenuManagement />} />
-          <Route path="analytics" element={<Analytics cafeId="demo-cafe-id" />} />
-          <Route path="broadcasts" element={<Broadcasts cafeId="demo-cafe-id" />} />
-          <Route path="feedback" element={<FeedbackPage cafeId="demo-cafe-id" />} />
-          <Route path="birthday" element={<BirthdayPage cafeId="demo-cafe-id" />} />
+          <Route path="floor-map" element={
+            <ProtectedRoute requiredRole={['owner', 'manager']}>
+              <FloorMap />
+            </ProtectedRoute>
+          } />
+          <Route path="menu" element={
+            <ProtectedRoute requiredRole={['owner', 'manager']}>
+              <MenuManagement />
+            </ProtectedRoute>
+          } />
+          <Route path="analytics" element={
+            <ProtectedRoute requiredRole={['owner', 'manager']}>
+              <Analytics cafeId="demo-cafe-id" />
+            </ProtectedRoute>
+          } />
+          <Route path="broadcasts" element={
+            <ProtectedRoute requiredRole={['owner', 'manager']}>
+              <Broadcasts cafeId="demo-cafe-id" />
+            </ProtectedRoute>
+          } />
+          <Route path="feedback" element={
+            <ProtectedRoute requiredRole={['owner', 'manager']}>
+              <FeedbackPage cafeId="demo-cafe-id" />
+            </ProtectedRoute>
+          } />
+          <Route path="birthday" element={
+            <ProtectedRoute requiredRole={['owner', 'manager']}>
+              <BirthdayPage cafeId="demo-cafe-id" />
+            </ProtectedRoute>
+          } />
+          <Route path="staff" element={
+            <ProtectedRoute requiredRole={['owner', 'manager']}>
+              <StaffManagement />
+            </ProtectedRoute>
+          } />
         </Route>
         <Route path="/order/:orderId" element={<OrderTracking />} />
         <Route path="/schema" element={<SchemaDocs />} />
