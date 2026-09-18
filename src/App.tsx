@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
+import { AuthProvider } from './contexts/AuthContext';
 import Header from './components/layout/Header';
 import Footer from './components/layout/Footer';
 import MobileNav from './components/layout/MobileNav';
@@ -11,6 +12,7 @@ import Kitchen from './pages/Kitchen';
 import Admin from './pages/Admin';
 import OrderTracking from './pages/OrderTracking';
 import SchemaDocs from './pages/SchemaDocs';
+import LoginPage from './pages/LoginPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +53,7 @@ function AppRoutes() {
     <Layout>
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/menu" element={<Menu />} />
         <Route path="/kitchen" element={<Kitchen />} />
         <Route path="/admin" element={<Admin />} />
@@ -82,9 +85,11 @@ export default function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <AuthProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AuthProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

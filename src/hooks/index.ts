@@ -200,3 +200,6 @@ export function useDashboardStats() {
     },
   });
 }
+
+// Re-export useAuth hook
+export { useAuth } from './useAuth';
