@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Cake,
   Calendar,
+  Package,
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -29,6 +30,7 @@ const sidebarItems = [
   { icon: UtensilsCrossed, label: 'Menu Management', href: '/admin/menu' },
   { icon: ClipboardList, label: 'Orders', href: '/admin/orders' },
   { icon: Calendar, label: 'Reservations', href: '/admin/reservations' },
+  { icon: Package, label: 'Inventory', href: '/admin/inventory' },
   { icon: Users, label: 'Customers', href: '/admin/customers' },
   { icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
   { icon: Radio, label: 'Broadcasts', href: '/admin/broadcasts' },

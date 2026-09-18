@@ -23,6 +23,8 @@ import FeedbackPage from './pages/Feedback';
 import BirthdayPage from './pages/Birthday';
 import { StaffManagement } from './components/admin/StaffManagement';
 import AdminReservations from './components/admin/AdminReservations';
+import Inventory from './components/admin/Inventory';
+import InventoryReports from './components/admin/InventoryReports';
 import OrderTracking from './pages/OrderTracking';
 import SchemaDocs from './pages/SchemaDocs';
 import LoginPage from './pages/LoginPage';
@@ -129,6 +131,16 @@ function AppRoutes() {
           <Route path="reservations" element={
             <ProtectedRoute requiredRole={['owner', 'manager', 'staff']}>
               <AdminReservations cafeId="demo-cafe-id" />
+            </ProtectedRoute>
+          } />
+          <Route path="inventory" element={
+            <ProtectedRoute requiredRole={['owner', 'manager']}>
+              <Inventory cafeId="demo-cafe-id" />
+            </ProtectedRoute>
+          } />
+          <Route path="inventory/reports" element={
+            <ProtectedRoute requiredRole={['owner', 'manager']}>
+              <InventoryReports cafeId="demo-cafe-id" />
             </ProtectedRoute>
           } />
         </Route>

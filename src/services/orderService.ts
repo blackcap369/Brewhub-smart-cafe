@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import type { Database } from '../types/database';
 import type { CartItem } from '../stores/cartStore';
+import { deductIngredientsForOrder } from './inventoryService';
 
 type Order = Database['public']['Tables']['orders']['Row'];
 type OrderInsert = Database['public']['Tables']['orders']['Insert'];
@@ -77,6 +78,15 @@ export async function createOrder(params: CreateOrderParams): Promise<{
       .single();
 
     if (orderError) throw orderError;
+
+    // Auto-deduct ingredients from inventory
+    try {
+      await deductIngredientsForOrder(order.id);
+    } catch (inventoryError) {
+      console.error('Error deducting inventory:', inventoryError);
+      // Don't fail the order if inventory deduction fails
+      // Admin can manually adjust inventory
+    }
 
     return {
       success: true,
