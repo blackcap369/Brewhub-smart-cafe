@@ -12,6 +12,10 @@ import Menu from './pages/Menu';
 import Kitchen from './pages/Kitchen';
 import { KitchenDashboard } from './pages/KitchenDashboard';
 import Admin from './pages/Admin';
+import AdminDashboard from './pages/AdminDashboard';
+import Overview from './components/admin/Overview';
+import FloorMap from './components/admin/FloorMap';
+import MenuManagement from './components/admin/MenuManagement';
 import OrderTracking from './pages/OrderTracking';
 import SchemaDocs from './pages/SchemaDocs';
 import LoginPage from './pages/LoginPage';
@@ -32,8 +36,9 @@ function Layout({ children }: { children: React.ReactNode }) {
   const isKitchen = location.pathname === '/kitchen';
   const isKitchenDashboard = location.pathname === '/kitchen-dashboard';
   const isCustomerApp = location.pathname === '/customer';
+  const isAdminDashboard = location.pathname.startsWith('/admin-dashboard');
 
-  if (isKitchen || isKitchenDashboard || isCustomerApp) {
+  if (isKitchen || isKitchenDashboard || isCustomerApp || isAdminDashboard) {
     return <>{children}</>;
   }
 
@@ -64,6 +69,11 @@ function AppRoutes() {
         <Route path="/kitchen" element={<Kitchen />} />
         <Route path="/kitchen-dashboard" element={<KitchenDashboard />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />}>
+          <Route index element={<Overview />} />
+          <Route path="floor-map" element={<FloorMap />} />
+          <Route path="menu" element={<MenuManagement />} />
+        </Route>
         <Route path="/order/:orderId" element={<OrderTracking />} />
         <Route path="/schema" element={<SchemaDocs />} />
         <Route
