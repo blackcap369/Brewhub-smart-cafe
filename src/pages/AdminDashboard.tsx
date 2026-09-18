@@ -18,6 +18,7 @@ import {
   Sun,
   Coffee,
   ChevronRight,
+  MessageSquare,
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -28,6 +29,7 @@ const sidebarItems = [
   { icon: Users, label: 'Customers', href: '/admin/customers' },
   { icon: BarChart3, label: 'Analytics', href: '/admin/analytics' },
   { icon: Radio, label: 'Broadcasts', href: '/admin/broadcasts' },
+  { icon: MessageSquare, label: 'Feedback', href: '/admin/feedback' },
   { icon: Settings, label: 'Settings', href: '/admin/settings' },
 ];
 

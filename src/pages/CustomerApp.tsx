@@ -18,6 +18,7 @@ import PaymentModal from '../components/PaymentModal';
 import LoyaltyCard from '../components/LoyaltyCard';
 import LoyaltyBanner from '../components/LoyaltyBanner';
 import FreeItemSelector from '../components/FreeItemSelector';
+import FeedbackForm from '../components/FeedbackForm';
 
 type SortOption = 'default' | 'price-low' | 'price-high' | 'popular';
 type VegFilter = 'all' | 'veg' | 'non-veg';
@@ -43,6 +44,8 @@ export default function CustomerApp() {
   const [showLoyaltyCard, setShowLoyaltyCard] = useState(false);
   const [showFreeItemSelector, setShowFreeItemSelector] = useState(false);
   const [showBanner, setShowBanner] = useState(true);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [feedbackOrderId, setFeedbackOrderId] = useState<string | null>(null);
 
   const cart = useCartStore();
   const toast = useToast();
@@ -609,6 +612,23 @@ export default function CustomerApp() {
           setShowFreeItemSelector(false);
         }}
       />
+
+      {/* Feedback Form */}
+      {feedbackOrderId && qrData && (
+        <FeedbackForm
+          isOpen={showFeedbackForm}
+          onClose={() => {
+            setShowFeedbackForm(false);
+            setFeedbackOrderId(null);
+          }}
+          orderId={feedbackOrderId}
+          customerId="demo-customer-id" // In real app, get from auth context
+          cafeId={qrData.cafeId}
+          onSuccess={() => {
+            toast.success('Thank you for your feedback!');
+          }}
+        />
+      )}
     </div>
   );
 }
