@@ -11,6 +11,7 @@ import {
   Package,
   CreditCard,
   Database,
+  ChefHat,
 } from 'lucide-react';
 import { useAppStore } from '../../stores';
 
@@ -27,6 +28,7 @@ const sidebarLinks = [
     group: 'Operations',
     items: [
       { href: '/kitchen', label: 'Kitchen Display', icon: Package },
+      { href: '/kitchen-dashboard', label: 'KDS Dashboard', icon: ChefHat },
       { href: '/admin/tables', label: 'Tables', icon: Coffee },
       { href: '/admin/payments', label: 'Payments', icon: CreditCard },
     ],

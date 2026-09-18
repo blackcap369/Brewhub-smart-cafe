@@ -17,6 +17,7 @@ const mobileLinks = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/menu', label: 'Menu', icon: Coffee },
   { href: '/kitchen', label: 'Kitchen', icon: ChefHat },
+  { href: '/kitchen-dashboard', label: 'KDS Dashboard', icon: ChefHat },
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/orders', label: 'Orders', icon: ClipboardList },
   { href: '/admin/menu', label: 'Menu Items', icon: UtensilsCrossed },

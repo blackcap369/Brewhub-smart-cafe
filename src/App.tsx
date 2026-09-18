@@ -10,6 +10,7 @@ import ErrorBoundary from './components/ui/ErrorBoundary';
 import Landing from './pages/Landing';
 import Menu from './pages/Menu';
 import Kitchen from './pages/Kitchen';
+import { KitchenDashboard } from './pages/KitchenDashboard';
 import Admin from './pages/Admin';
 import OrderTracking from './pages/OrderTracking';
 import SchemaDocs from './pages/SchemaDocs';
@@ -29,9 +30,10 @@ const queryClient = new QueryClient({
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const isKitchen = location.pathname === '/kitchen';
+  const isKitchenDashboard = location.pathname === '/kitchen-dashboard';
   const isCustomerApp = location.pathname === '/customer';
 
-  if (isKitchen || isCustomerApp) {
+  if (isKitchen || isKitchenDashboard || isCustomerApp) {
     return <>{children}</>;
   }
 
@@ -60,6 +62,7 @@ function AppRoutes() {
         <Route path="/menu" element={<Menu />} />
         <Route path="/customer" element={<CustomerApp />} />
         <Route path="/kitchen" element={<Kitchen />} />
+        <Route path="/kitchen-dashboard" element={<KitchenDashboard />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/order/:orderId" element={<OrderTracking />} />
         <Route path="/schema" element={<SchemaDocs />} />

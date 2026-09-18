@@ -18,6 +18,7 @@ const navLinks = [
   { href: '/menu', label: 'Menu' },
   { href: '/admin', label: 'Dashboard' },
   { href: '/kitchen', label: 'Kitchen' },
+  { href: '/kitchen-dashboard', label: 'KDS' },
   { href: '/schema', label: 'Schema' },
 ];
 
