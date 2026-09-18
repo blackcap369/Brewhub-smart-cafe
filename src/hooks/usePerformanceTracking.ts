@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { performanceMonitor, reportWebVitals } from './monitoring';
+import { performanceMonitor, reportWebVitals } from '../utils/monitoring';
 
 /**
  * Hook to track page view performance
@@ -98,9 +98,9 @@ export function useWebVitals(): void {
   useEffect(() => {
     if (import.meta.env.PROD) {
       // Import web-vitals dynamically to reduce bundle size
-      import('web-vitals').then(({ onCLS, onFID, onLCP, onFCP, onTTFB }) => {
+      import('web-vitals').then(({ onCLS, onLCP, onFCP, onTTFB, onINP }) => {
         onCLS(reportWebVitals);
-        onFID(reportWebVitals);
+        onINP(reportWebVitals);
         onLCP(reportWebVitals);
         onFCP(reportWebVitals);
         onTTFB(reportWebVitals);
@@ -128,8 +128,9 @@ export function useApiTracking(): void {
           
           // Log slow requests
           if (duration > 1000) {
+            const requestUrl = typeof url === 'string' ? url : (url as Request).url;
             console.warn('[API] Slow request:', {
-              url: typeof url === 'string' ? url : url.url,
+              url: requestUrl,
               duration: `${duration.toFixed(2)}ms`,
               method: options?.method || 'GET',
               status: response.status,
@@ -141,8 +142,9 @@ export function useApiTracking(): void {
           const endTime = performance.now();
           const duration = endTime - startTime;
           
+          const requestUrl = typeof url === 'string' ? url : (url as Request).url;
           console.error('[API] Request failed:', {
-            url: typeof url === 'string' ? url : url.url,
+            url: requestUrl,
             duration: `${duration.toFixed(2)}ms`,
             error,
           });
@@ -217,10 +219,11 @@ export function useErrorTracking(): void {
     };
     
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
       const errorInfo = {
         message: 'Unhandled Promise Rejection',
-        reason: event.reason?.message || String(event.reason),
-        stack: event.reason?.stack,
+        reason: reason?.message || String(reason),
+        stack: reason?.stack,
         timestamp: Date.now(),
         url: window.location.href,
       };
