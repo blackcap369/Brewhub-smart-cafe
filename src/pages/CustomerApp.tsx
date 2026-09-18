@@ -19,6 +19,8 @@ import LoyaltyCard from '../components/LoyaltyCard';
 import LoyaltyBanner from '../components/LoyaltyBanner';
 import FreeItemSelector from '../components/FreeItemSelector';
 import FeedbackForm from '../components/FeedbackForm';
+import BirthdayBanner from '../components/BirthdayBanner';
+import DOBInput from '../components/DOBInput';
 
 type SortOption = 'default' | 'price-low' | 'price-high' | 'popular';
 type VegFilter = 'all' | 'veg' | 'non-veg';
@@ -46,6 +48,7 @@ export default function CustomerApp() {
   const [showBanner, setShowBanner] = useState(true);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
   const [feedbackOrderId, setFeedbackOrderId] = useState<string | null>(null);
+  const [showDOBInput, setShowDOBInput] = useState(false);
 
   const cart = useCartStore();
   const toast = useToast();
@@ -628,6 +631,28 @@ export default function CustomerApp() {
             toast.success('Thank you for your feedback!');
           }}
         />
+      )}
+
+      {/* Birthday Banner */}
+      {qrData && (
+        <BirthdayBanner
+          customerId="demo-customer-id" // In real app, get from auth context
+          cafeId={qrData.cafeId}
+        />
+      )}
+
+      {/* DOB Input Modal */}
+      {showDOBInput && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <DOBInput
+            customerId="demo-customer-id" // In real app, get from auth context
+            onSuccess={() => {
+              setShowDOBInput(false);
+              toast.success('Birthday saved! 🎂');
+            }}
+            onClose={() => setShowDOBInput(false)}
+          />
+        </div>
       )}
     </div>
   );

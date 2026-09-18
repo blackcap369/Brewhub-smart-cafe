@@ -19,6 +19,7 @@ import MenuManagement from './components/admin/MenuManagement';
 import Analytics from './components/admin/Analytics';
 import Broadcasts from './pages/Broadcasts';
 import FeedbackPage from './pages/Feedback';
+import BirthdayPage from './pages/Birthday';
 import OrderTracking from './pages/OrderTracking';
 import SchemaDocs from './pages/SchemaDocs';
 import LoginPage from './pages/LoginPage';
@@ -79,6 +80,7 @@ function AppRoutes() {
           <Route path="analytics" element={<Analytics cafeId="demo-cafe-id" />} />
           <Route path="broadcasts" element={<Broadcasts cafeId="demo-cafe-id" />} />
           <Route path="feedback" element={<FeedbackPage cafeId="demo-cafe-id" />} />
+          <Route path="birthday" element={<BirthdayPage cafeId="demo-cafe-id" />} />
         </Route>
         <Route path="/order/:orderId" element={<OrderTracking />} />
         <Route path="/schema" element={<SchemaDocs />} />
