@@ -13,6 +13,7 @@ import Admin from './pages/Admin';
 import OrderTracking from './pages/OrderTracking';
 import SchemaDocs from './pages/SchemaDocs';
 import LoginPage from './pages/LoginPage';
+import CustomerApp from './pages/CustomerApp';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,8 +28,9 @@ const queryClient = new QueryClient({
 function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const isKitchen = location.pathname === '/kitchen';
+  const isCustomerApp = location.pathname === '/customer';
 
-  if (isKitchen) {
+  if (isKitchen || isCustomerApp) {
     return <>{children}</>;
   }
 
@@ -55,6 +57,7 @@ function AppRoutes() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/menu" element={<Menu />} />
+        <Route path="/customer" element={<CustomerApp />} />
         <Route path="/kitchen" element={<Kitchen />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/order/:id" element={<OrderTracking />} />

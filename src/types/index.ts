@@ -351,3 +351,17 @@ export interface BroadcastForm {
   channel: 'in_app' | 'push' | 'sms' | 'email' | 'whatsapp';
   scheduledFor?: string;
 }
+
+// ============================================================================
+// QR CODE TYPES
+// ============================================================================
+
+export interface QRData {
+  cafeId: string;
+  tableNo: number;
+}
+
+export interface QRError {
+  error: string;
+  code: 'INVALID_URL' | 'MISSING_CAFE' | 'MISSING_TABLE' | 'INVALID_CAFE_ID' | 'INVALID_TABLE_NO';
+}
