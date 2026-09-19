@@ -1,109 +1,46 @@
 import Papa from 'papaparse';
 
-export interface MenuItemCSV {
-  name: string;
-  description?: string;
-  price: number;
-  category: string;
-  is_veg?: boolean;
-  is_popular?: boolean;
-  is_spicy?: boolean;
-  image_url?: string;
+export interface CSVRow {
+  [key: string]: string;
 }
 
-export interface CSVImportResult {
-  success: boolean;
-   MenuItemCSV[];
+export interface ParsedCSV {
+  data: CSVRow[];
+  headers: string[];
   errors: string[];
-  warnings: string[];
 }
 
-export interface CSVParseOptions {
-  delimiter?: string;
-  hasHeader?: boolean;
-  skipEmptyLines?: boolean;
+export interface ImportResult {
+  success: boolean;
+  imported: number;
+  failed: number;
+  errors: string[];
 }
 
 /**
- * Parse CSV file and validate menu items
+ * Parse CSV file and return structured data
  */
-export function parseCSVFile(
-  file: File,
-  options: CSVParseOptions = {}
-): Promise<CSVImportResult> {
+export function parseCSV(file: File): Promise<ParsedCSV> {
   return new Promise((resolve) => {
-    const { delimiter = ',', hasHeader = true, skipEmptyLines = true } = options;
-
     Papa.parse(file, {
-      delimiter,
-      header: hasHeader,
-      skipEmptyLines,
+      header: true,
+      skipEmptyLines: true,
       complete: (results) => {
-        const errors: string[] = [];
-        const warnings: string[] = [];
-        const validItems: MenuItemCSV[] = [];
-
-        results.data.forEach((row: any, index: number) => {
-          const rowNum = index + 2; // +2 because row 1 is header
-
-          // Validate required fields
-          if (!row.name || row.name.trim() === '') {
-            errors.push(`Row ${rowNum}: Name is required`);
-            return;
-          }
-
-          if (!row.price || isNaN(parseFloat(row.price))) {
-            errors.push(`Row ${rowNum}: Valid price is required`);
-            return;
-          }
-
-          if (!row.category || row.category.trim() === '') {
-            warnings.push(`Row ${rowNum}: Category is missing, using "Other"`);
-            row.category = 'Other';
-          }
-
-          // Parse and validate data
-          const item: MenuItemCSV = {
-            name: row.name.trim(),
-            description: row.description?.trim() || '',
-            price: parseFloat(row.price),
-            category: row.category.trim(),
-            is_veg: parseBoolean(row.is_veg || row.IsVeg || row.Veg),
-            is_popular: parseBoolean(row.is_popular || row.IsPopular || row.Popular),
-            is_spicy: parseBoolean(row.is_spicy || row.IsSpicy || row.Spicy),
-            image_url: row.image_url?.trim() || '',
-          };
-
-          // Additional validations
-          if (item.price < 0) {
-            errors.push(`Row ${rowNum}: Price cannot be negative`);
-            return;
-          }
-
-          if (item.price > 100000) {
-            warnings.push(`Row ${rowNum}: Unusually high price (${item.price})`);
-          }
-
-          if (item.name.length > 100) {
-            warnings.push(`Row ${rowNum}: Name is very long (${item.name.length} chars)`);
-          }
-
-          validItems.push(item);
-        });
+        const data = results.data as CSVRow[];
+        const headers = results.meta.fields || [];
+        const errors = results.errors.map(e => e.message);
 
         resolve({
-          success: errors.length === 0,
-           validItems,
+          data,
+          headers,
           errors,
-          warnings,
         });
       },
       error: (error) => {
         resolve({
-          success: false,
           data: [],
-          errors: [`Failed to parse CSV: ${error.message}`],
-          warnings: [],
+          headers: [],
+          errors: [error.message],
         });
       },
     });
@@ -111,142 +48,242 @@ export function parseCSVFile(
 }
 
 /**
- * Parse boolean values from CSV
+ * Validate CSV data against expected schema
  */
-function parseBoolean(value: any): boolean {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'string') {
-    const lower = value.toLowerCase().trim();
-    return ['true', 'yes', '1', 'y'].includes(lower);
+export function validateCSV(
+  data: CSVRow[],
+  requiredFields: string[]
+): { valid: boolean; errors: string[] } {
+  const errors: string[] = [];
+
+  if (data.length === 0) {
+    errors.push('CSV file is empty');
+    return { valid: false, errors };
   }
-  if (typeof value === 'number') {
-    return value === 1;
+
+  // Check required fields
+  const headers = Object.keys(data[0]);
+  const missingFields = requiredFields.filter(field => !headers.includes(field));
+  
+  if (missingFields.length > 0) {
+    errors.push(`Missing required columns: ${missingFields.join(', ')}`);
   }
-  return false;
+
+  // Validate each row
+  data.forEach((row, index) => {
+    const rowNumber = index + 2; // +2 because row 1 is header
+    
+    requiredFields.forEach(field => {
+      if (!row[field] || row[field].trim() === '') {
+        errors.push(`Row ${rowNumber}: Missing required field "${field}"`);
+      }
+    });
+
+    // Validate price if present
+    if (row.price) {
+      const price = parseFloat(row.price);
+      if (isNaN(price) || price < 0) {
+        errors.push(`Row ${rowNumber}: Invalid price "${row.price}"`);
+      }
+    }
+
+    // Validate boolean fields
+    if (row.is_veg !== undefined) {
+      const validBooleans = ['true', 'false', '1', '0', 'yes', 'no'];
+      if (!validBooleans.includes(row.is_veg.toLowerCase())) {
+        errors.push(`Row ${rowNumber}: Invalid value for is_veg "${row.is_veg}"`);
+      }
+    }
+
+    if (row.is_popular !== undefined) {
+      const validBooleans = ['true', 'false', '1', '0', 'yes', 'no'];
+      if (!validBooleans.includes(row.is_popular.toLowerCase())) {
+        errors.push(`Row ${rowNumber}: Invalid value for is_popular "${row.is_popular}"`);
+      }
+    }
+
+    if (row.is_spicy !== undefined) {
+      const validBooleans = ['true', 'false', '1', '0', 'yes', 'no'];
+      if (!validBooleans.includes(row.is_spicy.toLowerCase())) {
+        errors.push(`Row ${rowNumber}: Invalid value for is_spicy "${row.is_spicy}"`);
+      }
+    }
+  });
+
+  return {
+    valid: errors.length === 0,
+    errors,
+  };
 }
 
 /**
- * Download CSV template for menu import
+ * Convert CSV row to menu item format
  */
-export function downloadCSVTemplate(): void {
-  const template = [
-    ['Name', 'Description', 'Price', 'Category', 'IsVeg', 'IsPopular', 'IsSpicy'],
-    ['Espresso', 'Rich and bold single shot espresso', '3.50', 'Coffee', 'Yes', 'Yes', 'No'],
-    ['Cappuccino', 'Espresso with steamed milk and foam', '4.50', 'Coffee', 'Yes', 'No', 'No'],
-    ['Avocado Toast', 'Sourdough toast with smashed avocado', '8.00', 'Food', 'Yes', 'Yes', 'No'],
-    ['Chicken Sandwich', 'Grilled chicken with fresh vegetables', '10.00', 'Food', 'No', 'No', 'Yes'],
+export function csvRowToMenuItem(row: CSVRow) {
+  return {
+    name: row.name || row.item_name || '',
+    description: row.description || '',
+    price: parseFloat(row.price || '0'),
+    category: row.category || 'Uncategorized',
+    is_veg: parseBoolean(row.is_veg || row.veg || 'false'),
+    is_popular: parseBoolean(row.is_popular || row.popular || 'false'),
+    is_spicy: parseBoolean(row.is_spicy || row.spicy || 'false'),
+    image_url: row.image_url || row.image || '',
+  };
+}
+
+/**
+ * Parse boolean value from string
+ */
+function parseBoolean(value: string): boolean {
+  const trueValues = ['true', '1', 'yes', 'y'];
+  return trueValues.includes(value.toLowerCase().trim());
+}
+
+/**
+ * Generate CSV template for menu items
+ */
+export function generateCSVTemplate(): string {
+  const headers = [
+    'name',
+    'description',
+    'price',
+    'category',
+    'is_veg',
+    'is_popular',
+    'is_spicy',
+    'image_url',
   ];
 
-  const csv = Papa.unparse(template);
+  const sampleData = [
+    {
+      name: 'Cappuccino',
+      description: 'Rich espresso with steamed milk foam',
+      price: '150',
+      category: 'Coffee',
+      is_veg: 'true',
+      is_popular: 'true',
+      is_spicy: 'false',
+      image_url: '',
+    },
+    {
+      name: 'Paneer Tikka',
+      description: 'Grilled cottage cheese with spices',
+      price: '250',
+      category: 'Starters',
+      is_veg: 'true',
+      is_popular: 'false',
+      is_spicy: 'true',
+      image_url: '',
+    },
+  ];
+
+  const csv = Papa.unparse(sampleData, { columns: headers });
+  return csv;
+}
+
+/**
+ * Download CSV template
+ */
+export function downloadCSVTemplate(filename: string = 'menu-template.csv'): void {
+  const csv = generateCSVTemplate();
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-
   const link = document.createElement('a');
-  link.href = url;
-  link.download = 'menu_template.csv';
-  link.click();
-
-  URL.revokeObjectURL(url);
-}
-
-/**
- * Convert menu items to CSV format
- */
-export function exportMenuToCSV(items: MenuItemCSV[]): string {
-  return Papa.unparse(items);
-}
-
-/**
- * Validate CSV data before import
- */
-export function validateCSVData(items: MenuItemCSV[]): {
-  isValid: boolean;
-  errors: string[];
-  warnings: string[];
-} {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
-  if (items.length === 0) {
-    errors.push('No valid items found in CSV');
-    return { isValid: false, errors, warnings };
-  }
-
-  // Check for duplicate names
-  const names = items.map(item => item.name.toLowerCase());
-  const duplicates = names.filter((name, index) => names.indexOf(name) !== index);
+  const url = URL.createObjectURL(blob);
   
-  if (duplicates.length > 0) {
-    warnings.push(`Duplicate item names found: ${[...new Set(duplicates)].join(', ')}`);
-  }
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
 
-  // Check for missing descriptions
-  const noDescription = items.filter(item => !item.description || item.description.trim() === '');
-  if (noDescription.length > 0) {
-    warnings.push(`${noDescription.length} item(s) missing descriptions`);
-  }
+/**
+ * Import menu items from CSV data
+ */
+export async function importMenuItems(
+  data: CSVRow[],
+  cafeId: string,
+  supabase: any
+): Promise<ImportResult> {
+  const errors: string[] = [];
+  let imported = 0;
+  let failed = 0;
 
-  // Check for missing categories
-  const noCategory = items.filter(item => !item.category || item.category.trim() === '');
-  if (noCategory.length > 0) {
-    warnings.push(`${noCategory.length} item(s) missing categories`);
-  }
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const rowNumber = i + 2;
 
-  // Check price range
-  const invalidPrices = items.filter(item => item.price <= 0 || item.price > 10000);
-  if (invalidPrices.length > 0) {
-    errors.push(`${invalidPrices.length} item(s) have invalid prices`);
+    try {
+      const menuItem = csvRowToMenuItem(row);
+
+      // Validate required fields
+      if (!menuItem.name) {
+        errors.push(`Row ${rowNumber}: Name is required`);
+        failed++;
+        continue;
+      }
+
+      if (!menuItem.price || menuItem.price <= 0) {
+        errors.push(`Row ${rowNumber}: Valid price is required`);
+        failed++;
+        continue;
+      }
+
+      // Insert into database
+      const { error } = await supabase
+        .from('menu_items')
+        .insert([
+          {
+            cafe_id: cafeId,
+            ...menuItem,
+          },
+        ]);
+
+      if (error) {
+        errors.push(`Row ${rowNumber}: ${error.message}`);
+        failed++;
+      } else {
+        imported++;
+      }
+    } catch (error: any) {
+      errors.push(`Row ${rowNumber}: ${error.message}`);
+      failed++;
+    }
   }
 
   return {
-    isValid: errors.length === 0,
+    success: failed === 0,
+    imported,
+    failed,
     errors,
-    warnings,
   };
+}
+
+/**
+ * Preview CSV data before import
+ */
+export function previewCSV(data: CSVRow[], limit: number = 5): CSVRow[] {
+  return data.slice(0, limit);
 }
 
 /**
  * Map CSV columns to expected format
  */
 export function mapCSVColumns(
-   any[],
+  data: CSVRow[],
   columnMapping: Record<string, string>
-): MenuItemCSV[] {
+): CSVRow[] {
   return data.map(row => {
-    const mapped: any = {};
+    const mapped: CSVRow = {};
     
     Object.entries(columnMapping).forEach(([target, source]) => {
-      mapped[target] = row[source];
+      mapped[target] = row[source] || '';
     });
 
-    return {
-      name: mapped.name || '',
-      description: mapped.description || '',
-      price: parseFloat(mapped.price) || 0,
-      category: mapped.category || 'Other',
-      is_veg: parseBoolean(mapped.is_veg),
-      is_popular: parseBoolean(mapped.is_popular),
-      is_spicy: parseBoolean(mapped.is_spicy),
-      image_url: mapped.image_url || '',
-    };
-  });
-}
-
-/**
- * Get CSV preview (first 5 rows)
- */
-export function getCSVPreview(file: File, rows: number = 5): Promise<any[]> {
-  return new Promise((resolve) => {
-    Papa.parse(file, {
-      header: true,
-      preview: rows,
-      complete: (results) => {
-        resolve(results.data);
-      },
-      error: () => {
-        resolve([]);
-      },
-    });
+    return mapped;
   });
 }
 
@@ -255,58 +292,45 @@ export function getCSVPreview(file: File, rows: number = 5): Promise<any[]> {
  */
 export function detectDelimiter(file: File): Promise<string> {
   return new Promise((resolve) => {
-    Papa.parse(file, {
-      preview: 5,
-      complete: (results) => {
-        const delimiters = [',', ';', '\t', '|'];
-        let bestDelimiter = ',';
-        let maxColumns = 0;
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const firstLine = text.split('\n')[0];
+      
+      const delimiters = [',', ';', '\t', '|'];
+      let bestDelimiter = ',';
+      let maxCount = 0;
 
-        delimiters.forEach(delimiter => {
-          const testParse = Papa.parse(results.meta.cursor || '', { delimiter });
-          const columns = testParse.data[0]?.length || 0;
-          
-          if (columns > maxColumns) {
-            maxColumns = columns;
-            bestDelimiter = delimiter;
-          }
-        });
+      delimiters.forEach(delimiter => {
+        const count = (firstLine.match(new RegExp(delimiter, 'g')) || []).length;
+        if (count > maxCount) {
+          maxCount = count;
+          bestDelimiter = delimiter;
+        }
+      });
 
-        resolve(bestDelimiter);
-      },
-      error: () => {
-        resolve(',');
-      },
-    });
+      resolve(bestDelimiter);
+    };
+
+    reader.readAsText(file.slice(0, 1000)); // Read first 1KB
   });
 }
 
 /**
- * Convert CSV to JSON with custom schema
+ * Validate file type and size
  */
-export function csvToJSON<T>(
-  file: File,
-  schema: Record<string, string>
-): Promise<T[]> {
-  return new Promise((resolve) => {
-    Papa.parse(file, {
-      header: true,
-      complete: (results) => {
-        const mapped = results.data.map((row: any) => {
-          const item: any = {};
-          
-          Object.entries(schema).forEach(([target, source]) => {
-            item[target] = row[source];
-          });
+export function validateCSVFile(file: File): { valid: boolean; error?: string } {
+  const maxSize = 5 * 1024 * 1024; // 5MB
+  const validTypes = ['text/csv', 'application/vnd.ms-excel', ''];
 
-          return item as T;
-        });
+  if (file.size > maxSize) {
+    return { valid: false, error: 'File size exceeds 5MB limit' };
+  }
 
-        resolve(mapped);
-      },
-      error: () => {
-        resolve([]);
-      },
-    });
-  });
+  if (!validTypes.includes(file.type) && !file.name.endsWith('.csv')) {
+    return { valid: false, error: 'Invalid file type. Please upload a CSV file.' };
+  }
+
+  return { valid: true };
 }

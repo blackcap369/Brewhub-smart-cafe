@@ -13,6 +13,8 @@ import LoadingSpinner from './components/ui/LoadingSpinner';
 
 // Lazy load routes for code splitting
 const Landing = lazy(() => import('./pages/Landing'));
+const MarketingLanding = lazy(() => import('./pages/MarketingLanding'));
+const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Menu = lazy(() => import('./pages/Menu'));
 const Kitchen = lazy(() => import('./pages/Kitchen'));
 const KitchenDashboard = lazy(() => import('./pages/KitchenDashboard').then(m => ({ default: m.KitchenDashboard })));
@@ -78,6 +80,8 @@ function AppRoutes() {
       <Suspense fallback={<LoadingSpinner fullScreen text="Loading..." />}>
         <Routes location={location} key={location.pathname}>
           <Route path="/" element={<Landing />} />
+          <Route path="/marketing" element={<MarketingLanding />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/menu" element={<Menu />} />
           <Route path="/customer" element={<CustomerApp />} />
