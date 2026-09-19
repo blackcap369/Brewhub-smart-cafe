@@ -12,7 +12,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import LoadingSpinner from './components/ui/LoadingSpinner';
 
 // Lazy load routes for code splitting
-const Landing = lazy(() => import('./pages/Landing'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
 const MarketingLanding = lazy(() => import('./pages/MarketingLanding'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Menu = lazy(() => import('./pages/Menu'));
@@ -53,8 +53,10 @@ function Layout({ children }: { children: React.ReactNode }) {
   const isKitchenDashboard = location.pathname === '/kitchen-dashboard';
   const isCustomerApp = location.pathname === '/customer';
   const isAdminDashboard = location.pathname.startsWith('/admin-dashboard');
+  const isOnboarding = location.pathname === '/onboarding';
+  const isLanding = location.pathname === '/';
 
-  if (isKitchen || isKitchenDashboard || isCustomerApp || isAdminDashboard) {
+  if (isKitchen || isKitchenDashboard || isCustomerApp || isAdminDashboard || isOnboarding) {
     return <>{children}</>;
   }
 
@@ -79,7 +81,7 @@ function AppRoutes() {
     <Layout>
       <Suspense fallback={<LoadingSpinner fullScreen text="Loading..." />}>
         <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<Landing />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/marketing" element={<MarketingLanding />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/login" element={<LoginPage />} />
